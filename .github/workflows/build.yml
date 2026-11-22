@@ -1,0 +1,40 @@
+name: Build APK
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: |
+          unzip -o adel_tube_downloader.zip -d extracted
+          if [ -f extracted/pubspec.yaml ]; then
+            cp -r extracted/* .
+          else
+            cp -r extracted/*/* .
+          fi
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Prepare Android project
+        run: |
+          if [ -f tools/setup_android.sh ]; then
+            bash tools/setup_android.sh
+          fi
+      - name: Build APK
+        run: |
+          flutter pub get
+          flutter build apk --release
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: adel-tube-downloader-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
